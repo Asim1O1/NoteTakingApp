@@ -12,3 +12,7 @@ const getEnv = (key, defaultValue) => {
 
 export const PORT = getEnv("PORT");
 export const APP_ORIGIN = getEnv("APP_ORIGIN", "http://localhost:5173");
+
+export const NODE_ENV = getEnv("NODE_ENV", "development");
+export const JWT_SECRET = getEnv("JWT_SECRET");
+export const JWT_REFRESH_SECRET = getEnv("JWT_REFRESH_SECRET");

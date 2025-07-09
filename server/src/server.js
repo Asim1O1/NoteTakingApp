@@ -1,23 +1,26 @@
 import app from "./app.js";
 import { PORT } from "./constants/env.js";
+import { logger } from "./utils/logger.js"; // adjust path if needed
 
 const startServer = async () => {
   try {
     const server = app.listen(PORT, () => {
-      console.log(`Server running in  mode on port ${PORT}...`);
+      logger.info(
+        `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
+      );
     });
 
     // Graceful shutdown handling
     const shutdown = (signal) => {
-      console.log(`\n${signal} signal received: closing HTTP server`);
+      logger.warn(`${signal} signal received: closing HTTP server`);
       server.close(() => {
-        console.log("HTTP server closed");
+        logger.info("HTTP server closed");
         process.exit(0);
       });
 
       // Force close if not closed in time
       setTimeout(() => {
-        console.error("Forcing server shutdown");
+        logger.error("Forcing server shutdown");
         process.exit(1);
       }, 5000);
     };
@@ -27,17 +30,20 @@ const startServer = async () => {
 
     // Handle unhandled promise rejections
     process.on("unhandledRejection", (err) => {
-      console.error("Unhandled Rejection:", err);
+      logger.error("Unhandled Rejection: " + err.message, { stack: err.stack });
       shutdown("UNHANDLED_REJECTION");
     });
 
     // Handle uncaught exceptions
     process.on("uncaughtException", (err) => {
-      console.error("Uncaught Exception:", err);
+      logger.error("Uncaught Exception: " + err.message, { stack: err.stack });
       shutdown("UNCAUGHT_EXCEPTION");
     });
   } catch (error) {
-    console.error("Fatal error during server startup:", error);
+    logger.error("Fatal error during server startup", {
+      error: error.message,
+      stack: error.stack,
+    });
     process.exit(1);
   }
 };

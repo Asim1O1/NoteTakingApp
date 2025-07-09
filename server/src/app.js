@@ -4,10 +4,15 @@ import express from "express";
 import { APP_ORIGIN } from "./constants/env.js";
 import { OK } from "./constants/http.js";
 
+import authRoutes from "./features/auth/auth.route.js";
+import errorHandler from "./middlewares/errorhandler.js";
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use("/api", authRoutes);
 
 app.use(
   cors({
@@ -23,5 +28,9 @@ app.get("/", (req, res) => {
     message: "Health check successful!",
   });
 });
+
+app.use("/api/auth", authRoutes);
+
+app.use(errorHandler);
 
 export default app;
