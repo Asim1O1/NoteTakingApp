@@ -1,12 +1,15 @@
 import app from "./app.js";
 import { PORT } from "./constants/env.js";
-import { logger } from "./utils/logger.js"; // adjust path if needed
+import { logger } from "./utils/logger.js";
 
 const startServer = async () => {
   try {
     const server = app.listen(PORT, () => {
       logger.info(
         `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
+      );
+      logger.info(
+        `API documentation available at http://localhost:${PORT}/api-docs`
       );
     });
 

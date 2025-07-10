@@ -1,6 +1,8 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "../swagger.js";
 import { APP_ORIGIN } from "./constants/env.js";
 import { OK } from "./constants/http.js";
 
@@ -20,7 +22,7 @@ app.use(
     credentials: true,
   })
 );
-
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Health check route
 app.get("/", (req, res) => {
   res.status(OK).json({
