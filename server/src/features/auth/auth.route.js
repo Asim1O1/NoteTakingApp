@@ -4,7 +4,11 @@ import {
   loginHandler,
   logoutHandler,
   refreshHandler,
+  resendVerificationHandler,
+  verifyEmailHandler,
 } from "./auth.controller.js";
+
+import authenticate from "../../middlewares/authenticate.js";
 
 const authRoutes = Router();
 
@@ -360,5 +364,70 @@ authRoutes.post("/logout", logoutHandler);
  *       description: JWT refresh token stored in HTTP-only cookie
  */
 authRoutes.post("/refresh", refreshHandler);
+
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Verify user's email address
+ *     description: Endpoint to verify email using token sent to user's email
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: JWT verification token
+ *     responses:
+ *       302:
+ *         description: Redirects to dashboard on success
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *               example: accessToken=abc123; Path=/; HttpOnly
+ *       400:
+ *         description: Invalid or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+authRoutes.get("/verify-email", verifyEmailHandler);
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Resend verification email
+ *     description: Resends email verification link to authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Verification email resent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized (missing/invalid token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+authRoutes.post(
+  "/resend-verification",
+  authenticate,
+  resendVerificationHandler
+);
 
 export default authRoutes;

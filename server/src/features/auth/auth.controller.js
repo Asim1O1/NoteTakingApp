@@ -6,6 +6,8 @@ import {
   createAccount,
   loginUser,
   refreshAccessToken,
+  resendVerificationEmail,
+  verifyEmail,
 } from "./auth.service.js";
 
 export const createUserHandler = asyncHandler(async (req, res) => {
@@ -75,4 +77,25 @@ export const refreshHandler = asyncHandler(async (req, res) => {
         accessToken,
       },
     });
+});
+
+export const verifyEmailHandler = asyncHandler(async (req, res) => {
+  const { token } = req.query;
+  const { user, accessToken } = await verifyEmail(token);
+
+  // Set cookies and respond
+  setAuthCookies({ res, accessToken });
+
+  // Choose one response style:
+  // Option 1: Redirect (for web)
+  // return res.redirect("/dashboard");
+
+  // Option 2: JSON (for APIs)
+  return res.json({ success: true, user });
+});
+
+export const resendVerificationHandler = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+  await resendVerificationEmail(userId);
+  return res.json({ success: true, message: "Verification email resent" });
 });

@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import { CONFLICT, UNAUTHORIZED } from "../../constants/http.js";
 import appAssert from "../../utils/appAssert.js";
-import { signToken } from "../../utils/jwt.js";
+import { sendVerificationEmail } from "../../utils/emailVerification.js";
+import { signToken, verifyToken } from "../../utils/jwt.js";
 import prisma from "../../utils/prisma.js";
 
 export const createAccount = async ({
@@ -38,12 +39,13 @@ export const createAccount = async ({
     },
   });
 
+  await sendVerificationEmail(user);
   // Generate tokens
   const accessToken = signToken({
     userId: user.id,
     email: user.email,
     username: user.username,
-    isVerified: user.isVerified,
+    isVerified: false,
   });
 
   const refreshToken = signToken({ userId: user.id }, { type: "refresh" });
@@ -162,4 +164,44 @@ export const refreshAccessToken = async (refreshToken) => {
     accessToken: newAccessToken,
     refreshToken: newRefreshToken,
   };
+};
+
+export const verifyEmail = async (token) => {
+  // Verify token
+  const { payload, error, expired } = verifyToken(token);
+  if (error || !payload?.userId) {
+    throw new AppError(
+      expired ? "Verification link expired" : "Invalid token",
+      BAD_REQUEST
+    );
+  }
+
+  // Update user verification status
+  const user = await prisma.user.update({
+    where: { id: payload.userId },
+    data: { isVerified: true },
+    select: { id: true, email: true, username: true }, // Essential fields only
+  });
+
+  // Generate new access token reflecting verified status
+  const accessToken = signToken({
+    userId: user.id,
+    email: user.email,
+    isVerified: true,
+  });
+
+  return { user, accessToken };
+};
+
+export const resendVerificationEmail = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true },
+  });
+  appAssert(user, NOT_FOUND, "User not found");
+
+  const newToken = signToken({ userId: user.id }, { expiresIn: "24h" });
+  await sendVerificationEmail(user.email, newToken); // Your email service
+
+  return { success: true };
 };
