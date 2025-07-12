@@ -7,6 +7,8 @@ import { APP_ORIGIN } from "./constants/env.js";
 import { OK } from "./constants/http.js";
 
 import authRoutes from "./features/auth/auth.route.js";
+import categoryRoutes from "./features/category/category.route.js";
+import noteRoutes from "./features/notes/note.route.js";
 import errorHandler from "./middlewares/errorhandler.js";
 
 const app = express();
@@ -14,7 +16,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use("/api", authRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/notes", noteRoutes);
+app.use("/api/categories", categoryRoutes);
 
 app.use(
   cors({

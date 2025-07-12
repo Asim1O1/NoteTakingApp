@@ -8,7 +8,7 @@ import {
   verifyEmailHandler,
 } from "./auth.controller.js";
 
-import authenticate from "../../middlewares/authenticate.js";
+import { authenticate } from "../../middlewares/authenticate.js";
 
 const authRoutes = Router();
 

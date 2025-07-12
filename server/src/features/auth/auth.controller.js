@@ -14,9 +14,7 @@ export const createUserHandler = asyncHandler(async (req, res) => {
   const request = registerSchema.parse({
     ...req.body,
   });
-
   const { user, accessToken, refreshToken } = await createAccount(request);
-
   return setAuthCookies({ res, accessToken, refreshToken })
     .status(CREATED)
     .json({
@@ -27,16 +25,11 @@ export const createUserHandler = asyncHandler(async (req, res) => {
 });
 
 export const loginHandler = asyncHandler(async (req, res) => {
-  // 1. Validate request (throws 400 if invalid)
   const { email, password } = loginSchema.parse(req.body);
-
-  // 2. Authenticate user (throws 401 if invalid)
   const { user, accessToken, refreshToken } = await loginUser({
     email: email.toLowerCase(),
     password,
   });
-
-  // 3. Set secure cookies and return response
   return setAuthCookies({ res, accessToken, refreshToken }).status(OK).json({
     success: true,
     data: user,
@@ -45,10 +38,8 @@ export const loginHandler = asyncHandler(async (req, res) => {
 });
 
 export const logoutHandler = asyncHandler(async (req, res) => {
-  // Clear cookies
   res.clearCookie("accessToken");
   res.clearCookie("refreshToken");
-
   return res.status(OK).json({
     success: true,
     message: "Logged out successfully",
@@ -56,17 +47,12 @@ export const logoutHandler = asyncHandler(async (req, res) => {
 });
 
 export const refreshHandler = asyncHandler(async (req, res) => {
-  // 1. Get refresh token from cookies
   const { refreshToken } = req.cookies;
-
-  // 2. Generate new tokens (throws 401 if invalid)
   const {
     user,
     accessToken,
     refreshToken: newRefreshToken,
   } = await refreshAccessToken(refreshToken);
-
-  // 3. Set new secure cookies and return response
   return setAuthCookies({ res, accessToken, refreshToken: newRefreshToken })
     .status(OK)
     .json({
@@ -82,15 +68,7 @@ export const refreshHandler = asyncHandler(async (req, res) => {
 export const verifyEmailHandler = asyncHandler(async (req, res) => {
   const { token } = req.query;
   const { user, accessToken } = await verifyEmail(token);
-
-  // Set cookies and respond
   setAuthCookies({ res, accessToken });
-
-  // Choose one response style:
-  // Option 1: Redirect (for web)
-  // return res.redirect("/dashboard");
-
-  // Option 2: JSON (for APIs)
   return res.json({ success: true, user });
 });
 

@@ -19,21 +19,58 @@ model User {
   username       String    @unique
   email          String    @unique
   password       String
+  role           UserRole  @default(USER)
   fullname       String?
-
-  // Email verification (for future implementation)
   isVerified     Boolean   @default(false)
-
-  // Refresh token
   refreshToken   String?
   refreshTokenExpires DateTime?
-
-  // 2FA fields (for future implementation)
   twoFactorSecret String?
   is2FAEnabled   Boolean   @default(false)
-
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  notes          Note[]
 
   @@map("users")
+}
+
+// Add this enum definition
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model Note {
+  id        String     @id @default(uuid())
+  title     String
+  content   String
+  author    User       @relation(fields: [authorId], references: [id])
+  authorId  String
+  noteCategories NoteCategory[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  @@unique([title, authorId])
+
+    @@map("notes")
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  noteCategories NoteCategory[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("categories")
+}
+
+
+model NoteCategory {
+  note     Note     @relation(fields: [noteId], references: [id])
+  noteId   String
+  category Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  createdAt DateTime @default(now())
+
+  @@id([noteId, categoryId])
+  @@map("note_categories")
 }
