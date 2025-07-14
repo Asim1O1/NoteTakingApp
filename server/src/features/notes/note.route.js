@@ -10,11 +10,10 @@ import {
 } from "../notes/note.controller.js";
 
 const noteRoutes = express.Router();
-
-noteRoutes.get("/", authenticate, checkVerified, getNotesHandler);
-noteRoutes.get("/:id", authenticate, checkVerified, getNoteHandler);
-noteRoutes.post("/", authenticate, createNoteHandler);
-noteRoutes.put("/:id", authenticate, updateNoteHandler);
-noteRoutes.delete("/:id", authenticate, deleteNoteHandler);
+noteRoutes.get("/", authenticate(), checkVerified, getNotesHandler);
+noteRoutes.post("/", authenticate(), createNoteHandler);
+noteRoutes.put("/:id", authenticate(), checkVerified, updateNoteHandler);
+noteRoutes.delete("/:id", authenticate(), checkVerified, deleteNoteHandler);
+noteRoutes.get("/:id", authenticate(), checkVerified, getNoteHandler);
 
 export default noteRoutes;

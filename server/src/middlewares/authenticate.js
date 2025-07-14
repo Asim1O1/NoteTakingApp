@@ -4,13 +4,6 @@ import { FORBIDDEN, UNAUTHORIZED } from "../constants/http.js";
 import { logger } from "../utils/logger.js";
 import prisma from "../utils/prisma.js";
 
-/**
- * Enhanced authentication middleware with:
- * - JWT verification
- * - Role-based access control
- * - Secure token handling
- * - Comprehensive error handling
- */
 export const authenticate = (options = {}) => {
   return async (req, res, next) => {
     const startTime = Date.now();
@@ -79,15 +72,6 @@ export const authenticate = (options = {}) => {
           success: false,
           message: "User account not found",
           code: "USER_NOT_FOUND",
-        });
-      }
-
-      if (!user.isVerified) {
-        logger.warn("[Auth] Unverified user attempt", { userId: user.id });
-        return res.status(FORBIDDEN).json({
-          success: false,
-          message: "Account not verified",
-          code: "UNVERIFIED_ACCOUNT",
         });
       }
 

@@ -12,6 +12,12 @@ import noteRoutes from "./features/notes/note.route.js";
 import errorHandler from "./middlewares/errorhandler.js";
 
 const app = express();
+app.use(
+  cors({
+    origin: APP_ORIGIN,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -20,13 +26,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/categories", categoryRoutes);
 
-app.use(
-  cors({
-    origin: APP_ORIGIN,
-    credentials: true,
-  })
-);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Health check route
 app.get("/", (req, res) => {
   res.status(OK).json({
@@ -35,7 +36,9 @@ app.get("/", (req, res) => {
   });
 });
 
-app.use("/api/auth", authRoutes);
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
 app.use(errorHandler);
 

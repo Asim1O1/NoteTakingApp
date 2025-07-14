@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { CONFLICT, UNAUTHORIZED } from "../../constants/http.js";
+import { CONFLICT, NOT_FOUND, UNAUTHORIZED } from "../../constants/http.js";
 import appAssert from "../../utils/appAssert.js";
 import { sendVerificationEmail } from "../../utils/emailVerification.js";
 import { signToken, verifyToken } from "../../utils/jwt.js";
@@ -88,6 +88,7 @@ export const loginUser = async ({ email, password }) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      role: user.role,
       isVerified: user.isVerified,
       createdAt: user.createdAt,
     },
@@ -201,7 +202,41 @@ export const resendVerificationEmail = async (userId) => {
   appAssert(user, NOT_FOUND, "User not found");
 
   const newToken = signToken({ userId: user.id }, { expiresIn: "24h" });
-  await sendVerificationEmail(user.email, newToken); // Your email service
+  await sendVerificationEmail(user.email, newToken);
 
   return { success: true };
+};
+
+export const getTheCurrentUser = async (userId) => {
+  // Validate userId exists
+  appAssert(userId, UNAUTHORIZED, "User  is required");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      fullname: true,
+      isVerified: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+
+  // Verify user exists
+  appAssert(user, NOT_FOUND, "User not found");
+
+  return {
+    user: {
+      ...user,
+      isAdmin: user.role === "ADMIN",
+    },
+    accessToken: signToken({
+      userId: user.id,
+      email: user.email,
+      isVerified: user.isVerified,
+      role: user.role,
+    }),
+  };
 };

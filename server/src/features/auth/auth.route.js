@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createUserHandler,
+  getCurrentUser,
   loginHandler,
   logoutHandler,
   refreshHandler,
@@ -426,8 +427,10 @@ authRoutes.get("/verify-email", verifyEmailHandler);
  */
 authRoutes.post(
   "/resend-verification",
-  authenticate,
+  authenticate(),
   resendVerificationHandler
 );
+
+authRoutes.get("/me", authenticate(), getCurrentUser);
 
 export default authRoutes;

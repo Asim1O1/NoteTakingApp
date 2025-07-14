@@ -4,6 +4,7 @@ import { setAuthCookies } from "../../utils/cookiee.js";
 import { loginSchema, registerSchema } from "../../validations/auth.schema.js";
 import {
   createAccount,
+  getTheCurrentUser,
   loginUser,
   refreshAccessToken,
   resendVerificationEmail,
@@ -25,6 +26,7 @@ export const createUserHandler = asyncHandler(async (req, res) => {
 });
 
 export const loginHandler = asyncHandler(async (req, res) => {
+  console.log("request body is", req?.body);
   const { email, password } = loginSchema.parse(req.body);
   const { user, accessToken, refreshToken } = await loginUser({
     email: email.toLowerCase(),
@@ -77,3 +79,15 @@ export const resendVerificationHandler = asyncHandler(async (req, res) => {
   await resendVerificationEmail(userId);
   return res.json({ success: true, message: "Verification email resent" });
 });
+
+export const getCurrentUser = async (req, res, next) => {
+  const userId = req.user?.id;
+  const { user, accessToken } = await getTheCurrentUser(userId);
+  console.log("The user is", user);
+
+  return setAuthCookies({ res, accessToken }).status(OK).json({
+    success: true,
+    data: user,
+    message: "User retrieved successfully",
+  });
+};
