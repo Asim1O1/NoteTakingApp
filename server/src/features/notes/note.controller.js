@@ -15,48 +15,19 @@ import { CREATED, OK } from "../../constants/http.js";
 
 export const createNoteHandler = asyncHandler(async (req, res) => {
   try {
-    console.log("[Note Creation] Handler started");
-    console.log("[Note Creation] User:", req.user.id);
-    console.log("[Note Creation] Request body:", JSON.stringify(req.body));
-
-    // 1. Validate input
-    console.log("[Note Creation] Validating input...");
     const input = createNoteSchema.parse(req.body);
-    console.log("[Note Creation] Input validated:", {
-      ...input,
-      content: input.content ? "[redacted]" : null,
-    });
 
-    // 2. Create note
-    console.log("[Note Creation] Calling createNote service...");
     const note = await createNote({
       ...input,
       authorId: req.user.id,
     });
-    console.log(
-      "[Note Creation] Note created successfully. Note ID:",
-      note.data.id
-    );
-    console.log(
-      "[Note Creation] Categories attached:",
-      note.data.categories?.length || 0
-    );
 
-    // 3. Send response
-    console.log("[Note Creation] Sending response...");
     res.status(CREATED).json({
       success: true,
       data: note,
       message: "Note created successfully",
     });
-    console.log("[Note Creation] Handler completed successfully");
   } catch (error) {
-    console.error("[Note Creation] Handler failed:", error.message);
-    console.error("[Note Creation] Error stack:", error.stack);
-    console.error("[Note Creation] User context:", req.user?.id);
-    console.error("[Note Creation] Input that failed:", req.body);
-
-    // Let asyncHandler handle the error response
     throw error;
   }
 });

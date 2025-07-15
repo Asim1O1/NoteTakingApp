@@ -40,13 +40,12 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Admin routes (also with DashboardLayout)
       {
         element: <AuthChecker requireAuth={true} adminOnly={true} />,
         children: [
           {
             path: "category/*",
-            element: <DashboardLayout />, // Same layout as user routes
+            element: <DashboardLayout />,
             children: [{ index: true, element: <Category /> }],
           },
         ],
@@ -60,10 +59,15 @@ export const router = createBrowserRouter([
 
   // Auth routes (separate from MainLayout)
   {
-    element: <AuthLayout />,
+    element: <AuthChecker requireAuth={false} />,
     children: [
-      { path: "login", element: <Login /> },
-      { path: "signup", element: <Signup /> },
+      {
+        element: <AuthLayout />,
+        children: [
+          { path: "login", element: <Login /> },
+          { path: "signup", element: <Signup /> },
+        ],
+      },
     ],
   },
 ]);

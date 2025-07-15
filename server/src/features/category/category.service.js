@@ -10,7 +10,6 @@ export const createCategory = async (name) => {
     "Category name must be a non-empty string"
   );
 
-  // Create category (Prisma will throw if name exists due to @unique)
   try {
     return await prisma.category.create({
       data: { name },
@@ -29,31 +28,25 @@ export const getCategories = async () => {
     orderBy: { name: "asc" },
   });
 };
-/**
- * Adds categories to a note by connect or create
- */
+
 export const addCategoriesToNote = async (noteId, userId, categoryNames) => {
-  // 1. Verify note exists and belongs to user
   const note = await prisma.note.findFirst({
     where: { id: noteId, authorId: userId },
   });
   appAssert(note, NOT_FOUND, "Note not found");
 
-  // 2. Verify all categories exist in the system
   const existingCategories = await prisma.category.findMany({
     where: {
       name: { in: categoryNames },
     },
   });
 
-  // Check if all requested categories exist
   appAssert(
     existingCategories.length === categoryNames.length,
     BAD_REQUEST,
     "One or more categories don't exist in the system"
   );
 
-  // 3. Create NoteCategory relationships (skip duplicates)
   await prisma.noteCategory.createMany({
     data: existingCategories.map((category) => ({
       noteId,
@@ -62,7 +55,6 @@ export const addCategoriesToNote = async (noteId, userId, categoryNames) => {
     skipDuplicates: true, // Skip if relationship already exists
   });
 
-  // 4. Return the updated note with categories
   const updatedNote = await prisma.note.findUnique({
     where: { id: noteId },
     include: {
@@ -80,9 +72,6 @@ export const addCategoriesToNote = async (noteId, userId, categoryNames) => {
   };
 };
 
-/**
- * Removes categories from a note
- */
 export const removeCategoriesFromNote = async (
   noteId,
   userId,

@@ -4,7 +4,7 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "../swagger.js";
 import { APP_ORIGIN } from "./constants/env.js";
-import { OK } from "./constants/http.js";
+import { NOT_FOUND, OK } from "./constants/http.js";
 
 import authRoutes from "./features/auth/auth.route.js";
 import categoryRoutes from "./features/category/category.route.js";
@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
 });
 
 app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
+  res.status(NOT_FOUND).json({ message: "Route not found" });
 });
 
 app.use(errorHandler);

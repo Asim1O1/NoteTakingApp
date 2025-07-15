@@ -26,7 +26,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, LayoutGrid, List, SquarePen, Tag, Trash } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Eye,
+  LayoutGrid,
+  List,
+  SquarePen,
+  Tag,
+  Trash,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Select from "react-select";
@@ -40,6 +49,8 @@ function ListNotes() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // Zustand stores
   const {
@@ -65,17 +76,26 @@ function ListNotes() {
   // Fetch notes when user changes or on mount
   useEffect(() => {
     if (user?.id) {
-      getNotes();
+      getNotes({}, { orderBy: sortBy, order: sortOrder });
     }
-  }, [user?.id]);
+  }, [user?.id, sortBy, sortOrder]);
 
-  // Fetch notes when filters change (excluding initial load)
-  // Fetch notes when filters change (including when cleared)
   useEffect(() => {
     if (user?.id) {
-      getNotes(filters, { page: pagination.page });
+      getNotes(filters, {
+        page: pagination.page,
+        orderBy: sortBy,
+        order: sortOrder,
+      });
     }
-  }, [filters.search, filters.category, pagination.page, user?.id]);
+  }, [
+    filters.search,
+    filters.category,
+    pagination.page,
+    user?.id,
+    sortBy,
+    sortOrder,
+  ]);
 
   // Handle category filter change
   const handleCategoryChange = async (selectedOption) => {
@@ -99,11 +119,25 @@ function ListNotes() {
     setSearchTerm(value);
   };
 
+  // Handle sorting change
+  const handleSortChange = (selectedOption) => {
+    setSortBy(selectedOption.value);
+  };
+
+  // Handle sort order change
+  const handleSortOrderChange = () => {
+    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
+
   // Handle delete note
   const handleDelete = async (noteId) => {
     try {
       await deleteNote(noteId);
-      await getNotes(filters, { page: pagination.page });
+      await getNotes(filters, {
+        page: pagination.page,
+        orderBy: sortBy,
+        order: sortOrder,
+      });
     } catch (error) {
       console.error("Failed to delete note:", error);
     }
@@ -112,7 +146,11 @@ function ListNotes() {
   // Handle pagination
   const handlePageChange = (page) => {
     if (page !== pagination.page) {
-      getNotes(filters, { page });
+      getNotes(filters, {
+        page,
+        orderBy: sortBy,
+        order: sortOrder,
+      });
     }
   };
 
@@ -130,7 +168,11 @@ function ListNotes() {
 
   // Handle categories updated
   const handleCategoriesUpdated = async () => {
-    await getNotes(filters, { page: pagination.page });
+    await getNotes(filters, {
+      page: pagination.page,
+      orderBy: sortBy,
+      order: sortOrder,
+    });
     handleCloseCategoryModal();
   };
 
@@ -148,6 +190,13 @@ function ListNotes() {
       value: cat.name,
       label: cat.name,
     })) || [];
+
+  // Sort options
+  const sortOptions = [
+    { value: "createdAt", label: "Creation Date" },
+    { value: "updatedAt", label: "Last Modified" },
+    { value: "title", label: "Title (A-Z)" },
+  ];
 
   // Sync search term with filters on mount
   useEffect(() => {
@@ -193,7 +242,7 @@ function ListNotes() {
           <button
             onClick={() => {
               clearError();
-              getNotes();
+              getNotes({}, { orderBy: sortBy, order: sortOrder });
             }}
             className="text-red-800 underline"
           >
@@ -202,34 +251,75 @@ function ListNotes() {
         </div>
       )}
 
-      {/* Search and filter controls */}
-      <div className="flex flex-col md:flex-row gap-3 items-center my-6">
-        <Select
-          placeholder="Filter by category"
-          className="w-full md:w-1/3"
-          options={categoryOptions}
-          value={selectedCategory}
-          onChange={handleCategoryChange}
-          isClearable
-        />
-
-        <form className="w-full md:w-2/3" onSubmit={handleSearch}>
-          <Input
-            type="text"
-            placeholder="Search notes..."
-            value={searchTerm}
-            onChange={handleSearchInputChange}
+      {/* Search, filter, and sort controls */}
+      <div className="flex flex-col gap-3 my-6">
+        <div className="flex flex-col md:flex-row gap-3 items-center">
+          <Select
+            placeholder="Filter by category"
+            className="w-full md:w-1/3"
+            options={categoryOptions}
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            isClearable
           />
-        </form>
+
+          <form className="w-full md:w-2/3" onSubmit={handleSearch}>
+            <Input
+              type="text"
+              placeholder="Search notes..."
+              value={searchTerm}
+              onChange={handleSearchInputChange}
+            />
+          </form>
+        </div>
+
+        {/* Sort controls */}
+        <div className="flex flex-col md:flex-row gap-3 items-center">
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <span className="text-sm text-gray-600 whitespace-nowrap">
+              Sort by:
+            </span>
+            <Select
+              placeholder="Sort by"
+              className="w-full md:w-48"
+              options={sortOptions}
+              value={sortOptions.find((opt) => opt.value === sortBy)}
+              onChange={handleSortChange}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSortOrderChange}
+              className="flex items-center gap-1"
+              title={`Sort ${sortOrder === "asc" ? "Ascending" : "Descending"}`}
+            >
+              {sortOrder === "asc" ? (
+                <ArrowUp className="h-4 w-4" />
+              ) : (
+                <ArrowDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Filter summary */}
-      {(filters.search || filters.category) && (
+      {/* Filter and sort summary */}
+      {(filters.search ||
+        filters.category ||
+        sortBy !== "createdAt" ||
+        sortOrder !== "desc") && (
         <div className="mb-4 text-sm text-gray-600">
           <span>
             {filters.search && `Searching for: "${filters.search}"`}
             {filters.search && filters.category && " | "}
             {filters.category && `Category: ${filters.category}`}
+            {(filters.search || filters.category) &&
+              (sortBy !== "createdAt" || sortOrder !== "desc") &&
+              " | "}
+            {(sortBy !== "createdAt" || sortOrder !== "desc") &&
+              `Sorted by: ${
+                sortOptions.find((opt) => opt.value === sortBy)?.label
+              } (${sortOrder === "asc" ? "A-Z" : "Z-A"})`}
           </span>
 
           <button
@@ -237,14 +327,23 @@ function ListNotes() {
               setFilters({ search: "", category: "" });
               setSearchTerm("");
               setSelectedCategory(null);
+              setSortBy("createdAt");
+              setSortOrder("desc");
 
               if (pagination.page !== 1) {
-                getNotes({ search: "", category: "" }, { page: 1 });
+                getNotes(
+                  { search: "", category: "" },
+                  {
+                    page: 1,
+                    orderBy: "createdAt",
+                    order: "desc",
+                  }
+                );
               }
             }}
             className="ml-2 text-blue-600 hover:text-blue-800 underline"
           >
-            Clear filters
+            Clear all filters
           </button>
         </div>
       )}

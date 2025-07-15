@@ -28,11 +28,6 @@ export const setAuthCookies = ({ res, accessToken, refreshToken }) =>
     .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
     .cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions());
 
-/**
- * Clear authentication cookies from response
- * @param {Object} res - Express response object
- * @returns {Object} Express response object with cookies cleared
- */
 export const clearAuthCookies = (res) =>
   res
     .clearCookie("accessToken", {

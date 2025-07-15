@@ -8,12 +8,12 @@ export const AuthChecker = ({ requireAuth = true, adminOnly = false }) => {
   const location = useLocation();
 
   useEffect(() => {
-    if (isLoading) return; // Wait until auth state is loaded
+    if (isLoading) return;
 
     const currentPath = location.pathname;
     const isAdmin = user?.role === "ADMIN";
 
-    // 1. Handle unauthenticated users trying to access protected routes
+    // 1. Not authenticated & trying to access protected route
     if (
       requireAuth &&
       !isAuthenticated &&
@@ -23,24 +23,27 @@ export const AuthChecker = ({ requireAuth = true, adminOnly = false }) => {
       return;
     }
 
-    // 2. Handle authenticated users trying to access guest-only routes (login/signup)
+    // 2. Authenticated user visiting public-only pages like /login or /signup
     if (!requireAuth && isAuthenticated) {
-      navigate(isAdmin ? "/category" : "/notes", { replace: true });
+      const target = isAdmin ? "/category" : "/notes";
+      if (currentPath === "/login" || currentPath === "/signup") {
+        navigate(target, { replace: true });
+      }
       return;
     }
 
-    // 3. Handle non-admin users trying to access admin-only routes
+    // 3. Non-admin trying to access admin-only route
     if (adminOnly && isAuthenticated && !isAdmin) {
       navigate("/unauthorized", { replace: true });
       return;
     }
 
-    // 4. NEW: Handle admin users trying to access non-admin routes
+    // 4. Admin trying to access user-only route (optional enforcement)
     if (
       isAuthenticated &&
       isAdmin &&
       !adminOnly &&
-      !currentPath.startsWith("/category")
+      currentPath.startsWith("/notes")
     ) {
       navigate("/category", { replace: true });
       return;

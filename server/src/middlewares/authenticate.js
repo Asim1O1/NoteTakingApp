@@ -10,12 +10,6 @@ export const authenticate = (options = {}) => {
     let currentStep = "init";
 
     try {
-      currentStep = "token_extraction";
-      logger.debug(
-        `[Auth] Starting authentication for ${req.method} ${req.originalUrl}`
-      );
-
-      // 1. Token extraction with timeout check
       const token =
         req.cookies?.accessToken ||
         req.headers["x-access-token"] ||
@@ -30,7 +24,6 @@ export const authenticate = (options = {}) => {
         });
       }
 
-      // 2. JWT verification with timeout
       currentStep = "jwt_verification";
       let decoded;
       try {
@@ -47,7 +40,6 @@ export const authenticate = (options = {}) => {
         throw jwtError;
       }
 
-      // 3. Database query with timeout protection
       currentStep = "db_query";
       const user = await Promise.race([
         prisma.user.findUnique({
@@ -65,7 +57,6 @@ export const authenticate = (options = {}) => {
         ),
       ]);
 
-      currentStep = "user_validation";
       if (!user) {
         logger.warn("[Auth] User not found", { userId: decoded.userId });
         return res.status(UNAUTHORIZED).json({
@@ -75,7 +66,6 @@ export const authenticate = (options = {}) => {
         });
       }
 
-      // 4. Attach user and check roles
       currentStep = "role_verification";
       req.user = {
         id: user.id,
@@ -104,14 +94,6 @@ export const authenticate = (options = {}) => {
       });
       next();
     } catch (error) {
-      logger.error(`[Auth] Failed at step: ${currentStep}`, {
-        error: error.message,
-        stack: error.stack,
-        endpoint: req.originalUrl,
-        method: req.method,
-        duration: Date.now() - startTime,
-      });
-
       if (error.message === "Database timeout") {
         return res.status(504).json({
           success: false,

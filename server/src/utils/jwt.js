@@ -19,14 +19,6 @@ const DEFAULT_SIGN_OPTIONS = {
   audience: "users",
 };
 
-/**
- * Signs a JWT token
- * @param {object} payload - Data to include in token
- * @param {object} options - Options object
- * @param {'access'|'refresh'} [options.type='access'] - Token type
- * @param {object} [options.jwtOptions] - Additional jwt options
- * @returns {string} Signed token
- */
 export const signToken = (payload, options = {}) => {
   const { type = "access", jwtOptions = {} } = options;
   const config = TOKEN_CONFIG[type];
@@ -44,16 +36,6 @@ export const signToken = (payload, options = {}) => {
   });
 };
 
-/**
- * Verifies a JWT token
- * @param {string} token - Token to verify
- * @param {string} type - Expected token type ('access' or 'refresh')
- * @returns {{
- *   payload?: object,
- *   error?: string,
- *   expired?: boolean
- * }} Verification result
- */
 export const verifyToken = (token, type = "access") => {
   try {
     const { secret } = TOKEN_CONFIG[type];
@@ -68,11 +50,6 @@ export const verifyToken = (token, type = "access") => {
   }
 };
 
-/**
- * Decodes a token without verification
- * @param {string} token
- * @returns {object|null} Decoded payload
- */
 export const decodeToken = (token) => {
   return jwt.decode(token);
 };
