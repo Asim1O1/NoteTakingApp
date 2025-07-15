@@ -72,7 +72,7 @@ A modern full-stack note-taking application built with React (Vite), Node.js, an
    Create a `.env` file in the server directory:
 
    ```env
-   PORT=5000
+   PORT=3301
    DATABASE_URL="postgresql://username:password@localhost:5432/notes_app"
    JWT_SECRET=your_jwt_secret_key
    JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
@@ -86,7 +86,7 @@ A modern full-stack note-taking application built with React (Vite), Node.js, an
    SMTP_PASS=your_app_password
 
    # Frontend URL
-   FRONTEND_URL=http://localhost:5173
+   APP_ORIGIN=http://localhost:5173
    ```
 
 4. **Database Setup**
@@ -102,8 +102,6 @@ A modern full-stack note-taking application built with React (Vite), Node.js, an
 
 5. **Start the backend server**
    ```bash
-   npm start
-   # or for development
    npm run dev
    ```
 
@@ -126,221 +124,6 @@ The application will be available at `http://localhost:5173`
 ## API Documentation
 
 The API documentation is available via Swagger UI at `http://localhost:3301/api-docs` when the backend server is running.
-
-### Authentication Endpoints
-
-#### Register User
-
-```
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "username": "string",
-  "email": "string",
-  "password": "string"
-}
-```
-
-#### Login User
-
-```
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "string",
-  "password": "string"
-}
-```
-
-#### Logout User
-
-```
-POST /api/auth/logout
-Authorization: Bearer <token>
-```
-
-#### Refresh Token
-
-```
-POST /api/auth/refresh
-Content-Type: application/json
-
-{
-  "refreshToken": "string"
-}
-```
-
-#### Verify Email
-
-```
-GET /api/auth/verify-email?token=<verification_token>
-```
-
-#### Resend Verification Email
-
-```
-POST /api/auth/resend-verification
-Content-Type: application/json
-
-{
-  "email": "string"
-}
-```
-
-#### Get Current User
-
-```
-GET /api/auth/me
-Authorization: Bearer <token>
-```
-
-### Notes Endpoints
-
-#### Get All Notes
-
-```
-GET /api/notes?page=1&limit=10&category=string&search=string&sort=created_at
-Authorization: Bearer <token>
-```
-
-#### Get Single Note
-
-```
-GET /api/notes/:id
-Authorization: Bearer <token>
-```
-
-#### Create Note
-
-```
-POST /api/notes
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "string",
-  "content": "string",
-  "categoryIds": ["string"]
-}
-```
-
-#### Update Note
-
-```
-PUT /api/notes/:id
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "string",
-  "content": "string",
-  "categoryIds": ["string"]
-}
-```
-
-#### Delete Note
-
-```
-DELETE /api/notes/:id
-Authorization: Bearer <token>
-```
-
-### Categories Endpoints
-
-#### Get All Categories
-
-```
-GET /api/categories
-Authorization: Bearer <token>
-```
-
-#### Create Category (Admin only)
-
-```
-POST /api/categories
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "name": "string",
-  "color": "string"
-}
-```
-
-#### Add Categories to Note
-
-```
-POST /api/categories/:noteId/categories
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "categoryIds": ["string"]
-}
-```
-
-## Database Schema (Prisma)
-
-```prisma
-model User {
-  id                  String    @id @default(uuid())
-  username            String    @unique
-  email               String    @unique
-  password            String
-  role                UserRole  @default(USER)
-  fullname            String?
-  isVerified          Boolean   @default(false)
-  refreshToken        String?
-  refreshTokenExpires DateTime?
-  notes               Note[]
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  @@map("users")
-}
-
-enum UserRole {
-  USER
-  ADMIN
-}
-
-model Note {
-  id             String         @id @default(uuid())
-  title          String
-  content        String
-  author         User           @relation(fields: [authorId], references: [id])
-  authorId       String
-  noteCategories NoteCategory[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-
-  @@unique([title, authorId])
-  @@map("notes")
-}
-
-model Category {
-  id             String         @id @default(uuid())
-  name           String         @unique
-  noteCategories NoteCategory[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-
-  @@map("categories")
-}
-
-model NoteCategory {
-  note       Note     @relation(fields: [noteId], references: [id])
-  noteId     String
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId String
-  createdAt  DateTime @default(now())
-
-  @@id([noteId, categoryId])
-  @@map("note_categories")
-}
-```
 
 ### Database Design Decisions
 
@@ -427,17 +210,17 @@ src/
 │   │   ├── controllers/
 │   │   ├── services/
 │   │   ├── routes/
-│   │   └── models/
+│   │
 │   ├── category/      # Category management feature
 │   │   ├── controllers/
 │   │   ├── services/
 │   │   ├── routes/
-│   │   └── models/
+│   │
 │   └── notes/         # Notes management feature
 │       ├── controllers/
 │       ├── services/
 │       ├── routes/
-│       └── models/
+│
 ├── middlewares/       # Express middlewares (auth, validation, error handling)
 ├── scripts/          # Database seeding and utility scripts
 ├── utils/            # Utility functions and helpers
@@ -446,7 +229,7 @@ src/
 └── server.js        # Server entry point
 ```
 
-### Frontend Structure (Domain-Driven)
+### Frontend Structure
 
 The frontend is organized by domain and functionality:
 
@@ -455,8 +238,7 @@ src/
 ├── assets/           # Static assets (images, icons)
 ├── components/       # Reusable UI components
 │   ├── ui/          # shadcn/ui components
-│   ├── forms/       # Form components
-│   └── common/      # Common components
+│
 ├── config/          # Configuration files
 ├── layout/          # Layout components
 ├── lib/             # Utility libraries and helpers
@@ -484,16 +266,9 @@ src/
 
 - **JWT with Refresh Tokens**: Secure authentication with token rotation
 - **Password Hashing**: bcrypt for secure password storage
-- **Input Validation**: Zod validation on both frontend and backend
+- **Input Validation**: Zod validation on backend and form validation in frontend
 - **Email Verification**: Account verification to prevent spam registrations
 - **CORS Protection**: Configured for secure cross-origin requests
-
-### Performance Optimizations
-
-- **Server-side Pagination**: Efficient handling of large datasets
-- **Database Indexing**: Optimized queries for search and filtering
-- **Lazy Loading**: React components loaded as needed
-- **Vite's Fast Refresh**: Instant updates during development
 
 ## Logging (Winston)
 
@@ -502,7 +277,6 @@ Comprehensive logging is implemented with different log levels:
 - **Error**: Application errors and exceptions
 - **Warn**: Warning messages
 - **Info**: General information about app execution
-- **Debug**: Detailed debug information
 
 ## Development
 
@@ -511,8 +285,6 @@ Comprehensive logging is implemented with different log levels:
 #### Backend
 
 - `npm run dev` - Start development server with hot reload
-- `npm start` - Start production server
-- `npm run db:migrate` - Run database migrations
 
 #### Frontend
 
@@ -561,41 +333,15 @@ Interactive API documentation is available at `http://localhost:3301/api-docs` w
 ### Security Assumptions
 
 - **Email Verification**: Email verification is mandatory and emails are assumed to be delivered successfully
-- **Password Security**: Users are responsible for choosing strong passwords (minimum 6 characters enforced)
-- **HTTPS in Production**: The application will be deployed with HTTPS in production environments
-- **Rate Limiting**: API rate limiting is handled at the infrastructure level (not application level)
+- **Password Security**: Users are responsible for choosing strong passwords
 - **Data Privacy**: User data is private and not shared between different user accounts
-
-### Performance Assumptions
-
-- **Concurrent Users**: The application is designed to handle moderate concurrent usage (100-1000 users)
-- **Note Size**: Individual notes are assumed to be relatively small (< 1MB of text content)
-- **Database Scaling**: PostgreSQL can handle the expected read/write operations without additional optimization
-- **Client-Side Caching**: Browser caching is leveraged for static assets and API responses where appropriate
 
 ### Development Assumptions
 
 - **Environment Setup**: Developers have access to PostgreSQL and can run Node.js applications locally
-- **Testing Coverage**: Unit and integration tests cover critical paths; end-to-end tests cover user flows
 - **Documentation**: API documentation through Swagger is sufficient for frontend development
 - **Logging**: Winston logging provides adequate monitoring and debugging capabilities
 - **Error Handling**: Comprehensive error handling covers most edge cases and provides meaningful user feedback
-
-### Deployment Assumptions
-
-- **Environment Variables**: All sensitive configuration is managed through environment variables
-- **Database Migrations**: Prisma migrations are run as part of the deployment process
-- **Static Assets**: Frontend build artifacts are served efficiently (CDN or static file server)
-- **Monitoring**: Application monitoring and alerting are handled by external services
-- **Backup Strategy**: Database backups are managed at the infrastructure level
-
-### Future Scalability Assumptions
-
-- **Microservices**: The current monolithic structure can be refactored into microservices if needed
-- **Real-time Features**: WebSocket support can be added for real-time collaboration without major refactoring
-- **Mobile Support**: The responsive design assumptions allow for future mobile app development
-- **API Versioning**: The current API structure supports versioning for backward compatibility
-- **Third-party Integrations**: The architecture supports integration with external services (file storage, analytics, etc.)
 
 ## Author
 
