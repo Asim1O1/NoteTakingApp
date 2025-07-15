@@ -5,13 +5,18 @@ import {
   loginHandler,
   logoutHandler,
   refreshHandler,
-  resendVerificationHandler,
   verifyEmailHandler,
 } from "./auth.controller.js";
 
 import { authenticate } from "../../middlewares/authenticate.js";
 
 const authRoutes = Router();
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: User Authentication and Authorization endpoints
+ */
 
 /**
  * @swagger
@@ -399,16 +404,16 @@ authRoutes.get("/verify-email", verifyEmailHandler);
 
 /**
  * @swagger
- * /api/auth/resend-verification:
- *   post:
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user's information
  *     tags: [Auth]
- *     summary: Resend verification email
- *     description: Resends email verification link to authenticated user
+ *     description: Returns the current authenticated user's details
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Verification email resent successfully
+ *         description: Successfully retrieved user information
  *         content:
  *           application/json:
  *             schema:
@@ -416,21 +421,72 @@ authRoutes.get("/verify-email", verifyEmailHandler);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "12345"
+ *                         username:
+ *                           type: string
+ *                           example: johndoe_99
+ *                         email:
+ *                           type: string
+ *                           example: johndoe@example.com
+ *                         fullname:
+ *                           type: string
+ *                           example: John Doe
+ *                         isVerified:
+ *                           type: boolean
+ *                           example: true
+ *                         isAdmin:
+ *                           type: boolean
+ *                           example: false
+ *                         role:
+ *                           type: string
+ *                           enum: [USER, ADMIN]
+ *                           example: USER
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                           example: 2025-07-10T08:30:00.000Z
+ *                     accessToken:
+ *                       type: string
+ *                       example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NSIsImVtYWlsIjoiam9obmRvZUBleGFtcGxlLmNvbSIsImlzVmVyaWZpZWQiOnRydWUsInJvbGUiOiJVU0VSIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTcyMDYwOTgwMCwiZXhwIjoxNzIwNjEwNzAwfQ.example_signature
  *                 message:
  *                   type: string
+ *                   example: User retrieved successfully
  *       401:
- *         description: Unauthorized (missing/invalid token)
+ *         description: Unauthorized - Missing or invalid authentication cookies
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Authentication required
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: User not found
  */
-authRoutes.post(
-  "/resend-verification",
-  authenticate(),
-  resendVerificationHandler
-);
-
 authRoutes.get("/me", authenticate(), getCurrentUser);
 
 export default authRoutes;

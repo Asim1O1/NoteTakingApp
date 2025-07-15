@@ -30,6 +30,8 @@ export default function Signup() {
     form: "",
   });
 
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const { register, isLoading } = useAuthStore();
 
   const handleChange = (e) => {
@@ -95,10 +97,13 @@ export default function Signup() {
         password: formData.password,
       });
       console.log("Registration result:", result);
+      setRegistrationSuccess(true);
+      setRegisteredEmail(formData.email.toLowerCase());
 
       toast.success("Account created successfully! Redirecting...", {
         id: "register",
       });
+      navigate("/login");
     } catch (err) {
       console.error("Registration error:", err);
       toast.error(
@@ -115,6 +120,55 @@ export default function Signup() {
       }));
     }
   };
+
+  // Show success message after registration
+  if (registrationSuccess) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center text-green-600">
+              🎉 Registration Successful!
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4 text-center">
+            <p>We've sent a verification email to:</p>
+            <p className="font-semibold text-blue-600">{registeredEmail}</p>
+            <p>
+              Please check your email and click the verification link to
+              activate your account.
+            </p>
+
+            <div className="bg-gray-50 p-4 rounded-md text-sm">
+              <p className="font-medium mb-2">Didn't receive the email?</p>
+              <ul className="text-left space-y-1">
+                <li>• Check your spam/junk folder</li>
+                <li>• Wait a few minutes for delivery</li>
+                <li>• Make sure the email address is correct</li>
+              </ul>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex-col gap-3">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() =>
+                window.open("/api/auth/resend-verification", "_blank")
+              }
+            >
+              Resend Verification Email
+            </Button>
+
+            <Button variant="link" asChild>
+              <Link to="/login">Go to Login</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">

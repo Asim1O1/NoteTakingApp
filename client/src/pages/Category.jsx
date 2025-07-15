@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@radix-ui/react-label";
+import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import useCategoryStore from "../stores/category.store"; // optional for feedback
+import { useCategoryStore } from "../stores";
+
 function Category() {
+  console.log("entered the category page");
   const [name, setName] = useState("");
 
   const { categories, createCategory, getCategories, isLoading, error } =

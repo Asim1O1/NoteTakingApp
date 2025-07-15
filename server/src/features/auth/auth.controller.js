@@ -1,13 +1,14 @@
+import { APP_ORIGIN } from "../../constants/env.js";
 import { CREATED, OK } from "../../constants/http.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { setAuthCookies } from "../../utils/cookiee.js";
+import { emailVerifiedPage } from "../../utils/emailVerifiedPae.js";
 import { loginSchema, registerSchema } from "../../validations/auth.schema.js";
 import {
   createAccount,
   getTheCurrentUser,
   loginUser,
   refreshAccessToken,
-  resendVerificationEmail,
   verifyEmail,
 } from "./auth.service.js";
 
@@ -71,13 +72,8 @@ export const verifyEmailHandler = asyncHandler(async (req, res) => {
   const { token } = req.query;
   const { user, accessToken } = await verifyEmail(token);
   setAuthCookies({ res, accessToken });
-  return res.json({ success: true, user });
-});
 
-export const resendVerificationHandler = asyncHandler(async (req, res) => {
-  const { userId } = req.body;
-  await resendVerificationEmail(userId);
-  return res.json({ success: true, message: "Verification email resent" });
+  return res.send(emailVerifiedPage(`${APP_ORIGIN}/login`));
 });
 
 export const getCurrentUser = async (req, res, next) => {

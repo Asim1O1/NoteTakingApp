@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import useNoteStore from "../stores/note.store";
+import { useNoteStore } from "../stores";
 
 function NotePage() {
   const { id } = useParams();

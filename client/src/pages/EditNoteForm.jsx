@@ -6,8 +6,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
-import useCategoryStore from "../stores/category.store";
-import useNoteStore from "../stores/note.store";
+import { useCategoryStore, useNoteStore } from "../stores";
 
 export function EditNoteForm() {
   const { id } = useParams();

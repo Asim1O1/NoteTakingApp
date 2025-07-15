@@ -4,8 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import Select from "react-select";
 import { toast } from "sonner";
-import useCategoryStore from "../stores/category.store";
-import useNoteStore from "../stores/note.store";
+import { useCategoryStore, useNoteStore } from "../stores";
 
 function NewNotes() {
   const { categories, getCategories } = useCategoryStore();

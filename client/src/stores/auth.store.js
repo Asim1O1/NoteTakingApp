@@ -137,21 +137,6 @@ const useAuthStore = create(
         }
       },
 
-      resendVerification: async (userId) => {
-        set({ isLoading: true });
-        try {
-          await API.post("/api/auth/resend-verification", { userId });
-          set({ isLoading: false });
-        } catch (error) {
-          set({
-            error:
-              error.response?.data?.message || "Failed to resend verification",
-            isLoading: false,
-          });
-          throw error;
-        }
-      },
-
       clearError: () => set({ error: null }),
     }),
     {

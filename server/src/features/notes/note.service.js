@@ -317,6 +317,7 @@ export const updateNote = async (
 /**
  * Deletes a note
  */
+
 export const deleteNote = async (id, userId) => {
   // 1. Check if note exists and belongs to user
   const note = await prisma.note.findUnique({
@@ -324,8 +325,11 @@ export const deleteNote = async (id, userId) => {
   });
   appAssert(note, NOT_FOUND, "Note not found");
 
-  // 2. Delete the note
-  await prisma.note.deleteMany({
-    where: { id, authorId: userId },
+  await prisma.noteCategory.deleteMany({
+    where: { noteId: id },
+  });
+
+  await prisma.note.delete({
+    where: { id },
   });
 };

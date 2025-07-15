@@ -32,9 +32,7 @@ import { Link } from "react-router-dom";
 import Select from "react-select";
 import { CategoryManagementModal } from "../components/CategoryManagementModal";
 import Loading from "../components/loading";
-import { useAuthStore } from "../stores";
-import { default as useCategoryStore } from "../stores/category.store";
-import useNoteStore from "../stores/note.store";
+import { useAuthStore, useCategoryStore, useNoteStore } from "../stores";
 
 function ListNotes() {
   const [listType, setListType] = useState("list");
@@ -46,23 +44,17 @@ function ListNotes() {
   // Zustand stores
   const {
     notes,
-    filteredNotes,
     pagination,
     isLoading,
     error,
+    filters,
     getNotes,
     deleteNote,
     clearError,
     setFilters,
   } = useNoteStore();
 
-  const {
-    categories,
-    filterNotesByCategory,
-    getCategories,
-    addCategoriesToNote,
-    createCategory,
-  } = useCategoryStore();
+  const { categories, getCategories } = useCategoryStore();
   const { user } = useAuthStore();
 
   // Fetch categories on mount
@@ -75,7 +67,15 @@ function ListNotes() {
     if (user?.id) {
       getNotes();
     }
-  }, [user?.id, getNotes]);
+  }, [user?.id]);
+
+  // Fetch notes when filters change (excluding initial load)
+  // Fetch notes when filters change (including when cleared)
+  useEffect(() => {
+    if (user?.id) {
+      getNotes(filters, { page: pagination.page });
+    }
+  }, [filters.search, filters.category, pagination.page, user?.id]);
 
   // Handle category filter change
   const handleCategoryChange = async (selectedOption) => {
@@ -93,11 +93,17 @@ function ListNotes() {
     setFilters({ search: searchTerm });
   };
 
+  // Handle search input change with debouncing
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+  };
+
   // Handle delete note
   const handleDelete = async (noteId) => {
     try {
       await deleteNote(noteId);
-      await getNotes();
+      await getNotes(filters, { page: pagination.page });
     } catch (error) {
       console.error("Failed to delete note:", error);
     }
@@ -105,7 +111,9 @@ function ListNotes() {
 
   // Handle pagination
   const handlePageChange = (page) => {
-    setFilters({}, { page });
+    if (page !== pagination.page) {
+      getNotes(filters, { page });
+    }
   };
 
   // Handle opening category management modal
@@ -122,7 +130,7 @@ function ListNotes() {
 
   // Handle categories updated
   const handleCategoriesUpdated = async () => {
-    await getNotes(); // Refresh notes to show updated categories
+    await getNotes(filters, { page: pagination.page });
     handleCloseCategoryModal();
   };
 
@@ -141,8 +149,20 @@ function ListNotes() {
       label: cat.name,
     })) || [];
 
-  // Determine which notes to display
-  const displayNotes = selectedCategory ? filteredNotes : notes;
+  // Sync search term with filters on mount
+  useEffect(() => {
+    setSearchTerm(filters.search || "");
+
+    // Sync selected category with filters
+    if (filters.category) {
+      const categoryOption = categoryOptions.find(
+        (opt) => opt.value === filters.category
+      );
+      setSelectedCategory(categoryOption || null);
+    } else {
+      setSelectedCategory(null);
+    }
+  }, [filters.search, filters.category]);
 
   if (!user) {
     return (
@@ -198,19 +218,45 @@ function ListNotes() {
             type="text"
             placeholder="Search notes..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchInputChange}
           />
         </form>
       </div>
 
+      {/* Filter summary */}
+      {(filters.search || filters.category) && (
+        <div className="mb-4 text-sm text-gray-600">
+          <span>
+            {filters.search && `Searching for: "${filters.search}"`}
+            {filters.search && filters.category && " | "}
+            {filters.category && `Category: ${filters.category}`}
+          </span>
+
+          <button
+            onClick={() => {
+              setFilters({ search: "", category: "" });
+              setSearchTerm("");
+              setSelectedCategory(null);
+
+              if (pagination.page !== 1) {
+                getNotes({ search: "", category: "" }, { page: 1 });
+              }
+            }}
+            className="ml-2 text-blue-600 hover:text-blue-800 underline"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
       {/* Main content area */}
       {isLoading ? (
         <Loading message="Loading notes..." />
-      ) : displayNotes?.length === 0 ? (
+      ) : notes?.length === 0 ? (
         <div className="my-8 text-center">
           <p className="text-gray-500 mb-4">
-            {selectedCategory
-              ? "No notes found in this category."
+            {filters.search || filters.category
+              ? "No notes found matching your criteria."
               : "No notes found."}
           </p>
           <Link
@@ -228,7 +274,7 @@ function ListNotes() {
               : "space-y-4"
           }
         >
-          {displayNotes?.map((note) => (
+          {notes?.map((note) => (
             <Card key={note.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row justify-between items-start">
                 <h2 className="font-bold text-xl">{note.title}</h2>
@@ -316,49 +362,90 @@ function ListNotes() {
 
       {/* Pagination */}
       {!isLoading && pagination?.totalPages > 1 && (
-        <Pagination className="mt-8">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() =>
-                  handlePageChange(Math.max(1, pagination.page - 1))
-                }
-                disabled={pagination.page === 1}
-              />
-            </PaginationItem>
-
-            {Array.from(
-              { length: Math.min(5, pagination.totalPages) },
-              (_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink
-                    isActive={i + 1 === pagination.page}
-                    onClick={() => handlePageChange(i + 1)}
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              )
-            )}
-
-            {pagination.totalPages > 5 && (
+        <div className="mt-8">
+          <Pagination className="mt-8">
+            <PaginationContent>
               <PaginationItem>
-                <PaginationEllipsis />
+                <PaginationPrevious
+                  onClick={() =>
+                    handlePageChange(Math.max(1, pagination.page - 1))
+                  }
+                  disabled={pagination.page === 1}
+                />
               </PaginationItem>
-            )}
 
-            <PaginationItem>
-              <PaginationNext
-                onClick={() =>
-                  handlePageChange(
-                    Math.min(pagination.totalPages, pagination.page + 1)
-                  )
+              {/* Show page numbers */}
+              {(() => {
+                const totalPages = pagination.totalPages;
+                const currentPage = pagination.page;
+                const delta = 2; // Number of pages to show on each side of current page
+                const pages = [];
+
+                // Always show first page
+                if (currentPage > delta + 1) {
+                  pages.push(1);
+                  if (currentPage > delta + 2) {
+                    pages.push("...");
+                  }
                 }
-                disabled={pagination.page === pagination.totalPages}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+
+                // Show pages around current page
+                for (
+                  let i = Math.max(1, currentPage - delta);
+                  i <= Math.min(totalPages, currentPage + delta);
+                  i++
+                ) {
+                  pages.push(i);
+                }
+
+                // Always show last page
+                if (currentPage < totalPages - delta) {
+                  if (currentPage < totalPages - delta - 1) {
+                    pages.push("...");
+                  }
+                  pages.push(totalPages);
+                }
+
+                return pages.map((page, index) => (
+                  <PaginationItem key={index}>
+                    {page === "..." ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        isActive={page === currentPage}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ));
+              })()}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    handlePageChange(
+                      Math.min(pagination.totalPages, pagination.page + 1)
+                    )
+                  }
+                  disabled={pagination.page === pagination.totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+
+          {/* Pagination info */}
+          <div className="text-center text-sm text-gray-600 mt-2">
+            Showing{" "}
+            {Math.min(
+              pagination.total,
+              (pagination.page - 1) * pagination.limit + 1
+            )}{" "}
+            to {Math.min(pagination.total, pagination.page * pagination.limit)}{" "}
+            of {pagination.total} notes
+          </div>
+        </div>
       )}
     </div>
   );

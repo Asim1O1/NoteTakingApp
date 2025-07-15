@@ -75,11 +75,6 @@ export default function Login() {
     try {
       const result = await login(formData);
       console.log("Login result:", result);
-
-      // Fixed: Use correct toast message for login
-      toast.success("Login successful! Redirecting...", {
-        id: "login",
-      });
     } catch (err) {
       console.error("Login error:", err);
 
@@ -90,7 +85,7 @@ export default function Login() {
         "Login failed. Please try again.";
 
       toast.error(errorMessage, {
-        id: "login", // Fixed: Use consistent toast id
+        id: "login",
       });
 
       setErrors((prev) => ({
@@ -139,12 +134,6 @@ export default function Login() {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link
-                    to="/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </Link>
                 </div>
                 <Input
                   id="password"

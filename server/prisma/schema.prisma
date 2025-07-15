@@ -24,8 +24,6 @@ model User {
   isVerified     Boolean   @default(false)
   refreshToken   String?
   refreshTokenExpires DateTime?
-  twoFactorSecret String?
-  is2FAEnabled   Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   notes          Note[]

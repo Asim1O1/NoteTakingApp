@@ -194,19 +194,6 @@ export const verifyEmail = async (token) => {
   return { user, accessToken };
 };
 
-export const resendVerificationEmail = async (userId) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, email: true },
-  });
-  appAssert(user, NOT_FOUND, "User not found");
-
-  const newToken = signToken({ userId: user.id }, { expiresIn: "24h" });
-  await sendVerificationEmail(user.email, newToken);
-
-  return { success: true };
-};
-
 export const getTheCurrentUser = async (userId) => {
   // Validate userId exists
   appAssert(userId, UNAUTHORIZED, "User  is required");

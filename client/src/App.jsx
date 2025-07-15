@@ -7,7 +7,6 @@ import { useAuthStore } from "./stores";
 
 function App() {
   const [theme, setTheme] = useState(() => {
-    // Initialize theme from localStorage or prefer-color-scheme
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"
@@ -45,7 +44,7 @@ function App() {
   const toggleTheme = () => {
     setTheme((prev) => {
       const newTheme = prev === "light" ? "dark" : "light";
-      toast.success(`Theme set to ${newTheme} mode`);
+
       return newTheme;
     });
   };

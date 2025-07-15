@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores";
 
@@ -6,49 +6,44 @@ export const AuthChecker = ({ requireAuth = true, adminOnly = false }) => {
   const { isAuthenticated, user, isLoading } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const initialCheck = useRef(true);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) return; // Wait until auth state is loaded
 
-    if (initialCheck.current || !initialCheck.current) {
-      const currentPath = location.pathname;
-      const isAdmin = user?.role === "ADMIN";
+    const currentPath = location.pathname;
+    const isAdmin = user?.role === "ADMIN";
 
-      // Unauthenticated users trying to access protected routes
-      if (requireAuth && !isAuthenticated && currentPath !== "/login") {
-        navigate("/login", { state: { from: location }, replace: true });
-        return;
-      }
+    // 1. Handle unauthenticated users trying to access protected routes
+    if (
+      requireAuth &&
+      !isAuthenticated &&
+      !["/", "/login", "/signup"].includes(currentPath)
+    ) {
+      navigate("/login", { state: { from: location }, replace: true });
+      return;
+    }
 
-      // Authenticated users trying to access guest-only routes
-      if (!requireAuth && isAuthenticated) {
-        if (isAdmin) {
-          navigate("/category", { replace: true });
-        } else {
-          navigate("/notes", { replace: true });
-        }
-        return;
-      }
+    // 2. Handle authenticated users trying to access guest-only routes (login/signup)
+    if (!requireAuth && isAuthenticated) {
+      navigate(isAdmin ? "/category" : "/notes", { replace: true });
+      return;
+    }
 
-      // Admin trying to access non-admin route
-      if (
-        !adminOnly &&
-        isAuthenticated &&
-        isAdmin &&
-        !currentPath.startsWith("/category")
-      ) {
-        navigate("/unauthorized", { replace: true });
-        return;
-      }
+    // 3. Handle non-admin users trying to access admin-only routes
+    if (adminOnly && isAuthenticated && !isAdmin) {
+      navigate("/unauthorized", { replace: true });
+      return;
+    }
 
-      // Non-admin trying to access admin route
-      if (adminOnly && isAuthenticated && !isAdmin) {
-        navigate("/unauthorized", { replace: true });
-        return;
-      }
-
-      initialCheck.current = false;
+    // 4. NEW: Handle admin users trying to access non-admin routes
+    if (
+      isAuthenticated &&
+      isAdmin &&
+      !adminOnly &&
+      !currentPath.startsWith("/category")
+    ) {
+      navigate("/category", { replace: true });
+      return;
     }
   }, [
     isAuthenticated,
@@ -60,5 +55,5 @@ export const AuthChecker = ({ requireAuth = true, adminOnly = false }) => {
     user,
   ]);
 
-  return <Outlet />;
+  return !isLoading ? <Outlet /> : null;
 };

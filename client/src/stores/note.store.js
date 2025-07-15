@@ -57,12 +57,6 @@ const useNoteStore = create((set, get) => ({
   },
 
   getNotes: async (filters = {}, pagination = {}) => {
-    console.log(
-      "Fetching notes with filters:",
-      filters,
-      "and pagination:",
-      pagination
-    );
     set({ isLoading: true, error: null });
     try {
       console.log("Current state:", get());
